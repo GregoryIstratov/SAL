@@ -174,45 +174,4 @@ int main() {
 
 
     return 0;
-    /*
-    size_t arr_size = 100 * 100 * 100 * 100;
-
-
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(INT32_MIN, INT32_MAX);
-
-
-    std::vector<int> arr;
-    arr.resize(arr_size);
-
-    for(size_t i = 0; i < arr_size; ++i)
-    {
-        arr[i] = i;
-    }
-
-    std::cout<<"Processing has started..."<<std::endl;
-    MyFun op(arr);
-    auto tm_start = std::chrono::system_clock::now();
-
-    //lsd_radix_sort(arr.data(), arr.data()+arr_size);
-    //std::sort(arr.begin(), arr.end());
-    //msd_radix_sort(arr.data(), arr.data()+arr_size);
-    //std::sort(arr.begin(), arr.end());
-
-    //for(int i = 0; i < arr.size(); ++i) op(i);
-
-    tbb::parallel_reduce(tbb::blocked_range<size_t>(0, arr_size), op);
-
-
-
-    auto tm_end = std::chrono::system_clock::now();
-    std::chrono::duration<double> elapsed = tm_end - tm_start;
-
-    std::cout<<"Processing has finished for "<<elapsed.count()<<" sec."<<std::endl;
-
-    std::cout<<std::fixed<<"Sum: "<<op.res_<<" Median: "<<op.get_median()<<std::endl;
-
-    return 0;
-     */
 }
