@@ -1,0 +1,2 @@
+# SAL
+Superior Algorithm Library
