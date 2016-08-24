@@ -7,7 +7,24 @@
 
 #include <cmath>
 #include <algorithm>
+#include <type_traits>
 #include "aligned_allocator.hpp"
+
+template <typename T>
+struct is_random_access_iterator : std::is_same<
+        typename std::iterator_traits<T>::iterator_category
+        , std::random_access_iterator_tag>
+{};
+
+template<typename T, typename InputIterator>
+InputIterator binary_search(const T &value, InputIterator first, InputIterator last) {
+    first = std::lower_bound(first, last, value);
+    if (first != last) {
+        return first;
+    }
+
+    return last;
+}
 
 // This version is borrowed from "Introduction to Algorithms" 3rd edition, p. 799.
 template< class T >
