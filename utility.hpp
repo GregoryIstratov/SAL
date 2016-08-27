@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <type_traits>
 #include <tbb/tbb.h>
+#include <future>
 #include "aligned_allocator.hpp"
 
 struct parallel_invoker

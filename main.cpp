@@ -63,7 +63,7 @@ public:
         auto tm_start = std::chrono::high_resolution_clock::now();
 
         for (int i = 0; i < N; ++i) {
-            sequential_simd_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+            sal::merge::internal::sequential_simd_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
         }
 
         auto tm_end = std::chrono::high_resolution_clock::now();
@@ -352,6 +352,19 @@ void test_index_merge3()
     print_seq("[Resulting output]", out.begin(), out.end());
 }
 
+
+
+void test_reverse_kernel()
+{
+    aligned_vector<int> a = { 15,13,11,9,7,5,3,1 };
+    aligned_vector<int> b = { 14,12,10,8,6,4,2,0 };
+    aligned_vector<int> c;
+    c.resize(a.size()+b.size());
+
+    internal::kernel::reverse_merge_256i(a.data(), b.data(), c.data());
+}
+
+
 int main() {
 
     std::random_device rd;
@@ -371,6 +384,9 @@ int main() {
 
     std::cout<<"Starting a sorting..."<<std::endl;
     auto tm_start = std::chrono::high_resolution_clock::now();
+
+    //simple way
+    //sal::sort::sorter<int>::merge_sort(a.begin(), a.end(), res.begin());
 
     sal::sort::sorter<int, parallel_invoker, 8192, merger_settings<simd_int_merger, static_block_partition<8192>>>
     ::merge_sort(a.begin(), a.end(), res.begin());
@@ -402,4 +418,5 @@ int main() {
     t.test_std_merge();
 
     return 0;
+
 }
