@@ -49,12 +49,27 @@ struct default_merger {
     }
 };
 
-template<typename T, typename BlockMerger = default_merger, typename BlockPartition = auto_block_partition>
+template<typename T, typename Invoker = parallel_invoker, typename BlockMerger = default_merger, typename BlockPartition = auto_block_partition>
 class merger {
 public:
 
     merger() = delete;
 
+    static void merge(const T* src1, long long p1, long long r1,
+                      long long p2, long long r2, T* dest, long long p3);
+
+    static void merge(const T* src1, long long p1, long long r1,
+                      const T* src2, long long p2, long long r2,
+                      T* dest, long long p3);
+
+    template<typename InputIterator, typename OutputIterator>
+    static void merge(InputIterator first, InputIterator mid, InputIterator last, OutputIterator out);
+
+    template<typename InputIterator, typename OutputIterator>
+    static void merge(InputIterator first1, InputIterator last1, InputIterator first2, InputIterator last2,
+                      OutputIterator out);
+
+    /*
     static void merge(const T* src1, long long p1, long long r1,
                       long long p2, long long r2, T* dest, long long p3);
 
@@ -79,21 +94,23 @@ public:
     template<typename InputIterator, typename OutputIterator>
     static void parallel_merge(InputIterator first1, InputIterator last1, InputIterator first2, InputIterator last2,
                                OutputIterator out);
-
+*/
 
 private:
     static void _dac_merge(const T *t, long long p1, long long r1,
                     const T *t2, long long p2, long long r2,
-                    T *a, long long p3, size_t block_size, BlockMerger block_merger);
+                    T *a, long long p3, size_t block_size, BlockMerger block_merger, Invoker invoker = Invoker());
 
+    /*
     static void _parallel_dac_merge(const T *t, long long p1, long long r1,
                            const T *t2, long long p2, long long r2,
                            T *a, long long p3, size_t block_size, BlockMerger block_merger);
+    */
 
 };
 
-template<typename T, typename BlockMerger, typename BlockPartition>
-void merger<T, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, long long r1,
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, long long r1,
                                                    long long p2, long long r2, T* dest, long long p3)
 {
     long long n1 = r1 - p1 + 1;
@@ -108,10 +125,10 @@ void merger<T, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, 
     _dac_merge(src1, p1, r1, src1, p2, r2, dest, p3, block_size, BlockMerger());
 }
 
-template<typename T, typename BlockMerger, typename BlockPartition>
-void merger<T, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, long long r1,
-                  const T* src2, long long p2, long long r2,
-                  T* dest, long long p3)
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, long long r1,
+                                                   const T* src2, long long p2, long long r2,
+                                                   T* dest, long long p3)
 {
     long long n1 = r1 - p1 + 1;
     long long n2 = r2 - p2 + 1;
@@ -120,9 +137,9 @@ void merger<T, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, 
     _dac_merge(src1, p1, r1, src2, p2, r2, dest, p3, block_size, BlockMerger());
 }
 
-template<typename T, typename BlockMerger, typename BlockPartition>
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
 template<typename InputIterator, typename OutputIterator>
-void merger<T, BlockMerger, BlockPartition>::merge(InputIterator first, InputIterator mid, InputIterator last, OutputIterator out)
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(InputIterator first, InputIterator mid, InputIterator last, OutputIterator out)
 {
     static_assert(std::is_same<T, typename std::iterator_traits<InputIterator>::value_type>::value,
                   "Specified type must be the same as type of iterators");
@@ -142,9 +159,9 @@ void merger<T, BlockMerger, BlockPartition>::merge(InputIterator first, InputIte
     _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger());
 };
 
-template<typename T, typename BlockMerger, typename BlockPartition>
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
 template<typename InputIterator, typename OutputIterator>
-void merger<T, BlockMerger, BlockPartition>::merge(InputIterator first1, InputIterator last1, InputIterator first2,
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(InputIterator first1, InputIterator last1, InputIterator first2,
                                                    InputIterator last2,
                                                    OutputIterator out) {
 
@@ -166,9 +183,9 @@ void merger<T, BlockMerger, BlockPartition>::merge(InputIterator first1, InputIt
     _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger());
 }
 
-
-template<typename T, typename BlockMerger, typename BlockPartition>
-void merger<T, BlockMerger, BlockPartition>::parallel_merge(const T* src1, long long p1, long long r1,
+/*
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, long long r1,
                                                    long long p2, long long r2, T* dest, long long p3)
 {
     long long n1 = r1 - p1 + 1;
@@ -180,12 +197,24 @@ void merger<T, BlockMerger, BlockPartition>::parallel_merge(const T* src1, long 
 
     size_t block_size = BlockPartition()(n12);
 
-    _parallel_dac_merge(src1, p1, r1, src1, p2, r2, dest, p3, block_size, BlockMerger());
+    _dac_merge(src1, p1, r1, src1, p2, r2, dest, p3, block_size, BlockMerger(), serial_invoker());
 }
 
-template<typename T, typename BlockMerger, typename BlockPartition>
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(const T* src1, long long p1, long long r1,
+                  const T* src2, long long p2, long long r2,
+                  T* dest, long long p3)
+{
+    long long n1 = r1 - p1 + 1;
+    long long n2 = r2 - p2 + 1;
+    size_t block_size = BlockPartition()(n1+n2);
+
+    _dac_merge(src1, p1, r1, src2, p2, r2, dest, p3, block_size, BlockMerger(), serial_invoker());
+}
+
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
 template<typename InputIterator, typename OutputIterator>
-void merger<T, BlockMerger, BlockPartition>::parallel_merge(InputIterator first, InputIterator mid, InputIterator last, OutputIterator out)
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(InputIterator first, InputIterator mid, InputIterator last, OutputIterator out)
 {
     static_assert(std::is_same<T, typename std::iterator_traits<InputIterator>::value_type>::value,
                   "Specified type must be the same as type of iterators");
@@ -202,14 +231,77 @@ void merger<T, BlockMerger, BlockPartition>::parallel_merge(InputIterator first,
     auto t2 = iterator2pointer(mid);
     auto outp = iterator2pointer(out);
 
-    _parallel_dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger());
+    _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger(), serial_invoker());
+};
+
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+template<typename InputIterator, typename OutputIterator>
+void merger<T, Invoker, BlockMerger, BlockPartition>::merge(InputIterator first1, InputIterator last1, InputIterator first2,
+                                                   InputIterator last2,
+                                                   OutputIterator out) {
+
+    static_assert(std::is_same<T, typename std::iterator_traits<InputIterator>::value_type>::value,
+                  "Specified type must be the same as type of iterators");
+    static_assert(is_random_access_iterator<InputIterator>::value && is_random_access_iterator<OutputIterator>::value,
+                  "Iterators must be of random-access iterator type");
+
+    long long a_size = std::distance(first1, last1);
+    long long b_size = std::distance(first2, last2);
+
+    size_t block_size = BlockPartition()(a_size+b_size);
+
+    long long p1 = 0, r1 = a_size-1 , p2 = 0, r2 = b_size-1 , p3 = 0;
+    auto t = iterator2pointer(first1);
+    auto t2 = iterator2pointer(first2);
+    auto outp = iterator2pointer(out);
+
+    _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger(), serial_invoker());
+}
+
+
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+void merger<T, Invoker, BlockMerger, BlockPartition>::parallel_merge(const T* src1, long long p1, long long r1,
+                                                   long long p2, long long r2, T* dest, long long p3)
+{
+    long long n1 = r1 - p1 + 1;
+    long long n2 = r2 - p2 + 1;
+    long long n12 = n1+n2;
+
+    if(n12 == 0)
+        return;
+
+    size_t block_size = BlockPartition()(n12);
+
+    _dac_merge(src1, p1, r1, src1, p2, r2, dest, p3, block_size, BlockMerger(), parallel_invoker());
+}
+
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+template<typename InputIterator, typename OutputIterator>
+void merger<T, Invoker, BlockMerger, BlockPartition>::parallel_merge(InputIterator first, InputIterator mid, InputIterator last, OutputIterator out)
+{
+    static_assert(std::is_same<T, typename std::iterator_traits<InputIterator>::value_type>::value,
+                  "Specified type must be the same as type of iterators");
+    static_assert(is_random_access_iterator<InputIterator>::value && is_random_access_iterator<OutputIterator>::value,
+                  "Iterators must be of random-access iterator type");
+
+    long long a_size = std::distance(first, mid);
+    long long b_size = std::distance(mid, last);
+
+    size_t block_size = BlockPartition()(a_size+b_size);
+
+    long long p1 = 0, r1 = a_size-1 , p2 = 0, r2 = b_size-1 , p3 = 0;
+    auto t = iterator2pointer(first);
+    auto t2 = iterator2pointer(mid);
+    auto outp = iterator2pointer(out);
+
+    _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger(), parallel_invoker());
 };
 
 
-template<typename T, typename BlockMerger, typename BlockPartition>
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
 template<typename InputIterator, typename OutputIterator>
 void
-merger<T, BlockMerger, BlockPartition>::parallel_merge(InputIterator first1, InputIterator last1, InputIterator first2,
+merger<T, Invoker, BlockMerger, BlockPartition>::parallel_merge(InputIterator first1, InputIterator last1, InputIterator first2,
                                                        InputIterator last2,
                                                        OutputIterator out) {
 
@@ -228,11 +320,11 @@ merger<T, BlockMerger, BlockPartition>::parallel_merge(InputIterator first1, Inp
     auto t2 = iterator2pointer(first2);
     auto outp = iterator2pointer(out);
 
-    _parallel_dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger());
+    _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, block_size, BlockMerger(), parallel_invoker());
 }
 
 
-
+*/
 
 
 namespace internal {

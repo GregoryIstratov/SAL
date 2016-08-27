@@ -7,10 +7,10 @@
 
 namespace sal { namespace merge {
 
-template<typename T, typename BlockMerger, typename BlockPartition>
-void merger<T, BlockMerger, BlockPartition>::_dac_merge(const T *t, long long p1, long long r1,
+template<typename T, typename Invoker, typename BlockMerger, typename BlockPartition>
+void merger<T, Invoker, BlockMerger, BlockPartition>::_dac_merge(const T *t, long long p1, long long r1,
                 const T *t2, long long p2, long long r2,
-                T *a, long long p3, size_t block_size, BlockMerger block_merger) {
+                T *a, long long p3, size_t block_size, BlockMerger block_merger, Invoker invoker) {
     long long n1 = r1 - p1 + 1;
     long long n2 = r2 - p2 + 1;
     if (n1 < n2) {
@@ -30,11 +30,16 @@ void merger<T, BlockMerger, BlockPartition>::_dac_merge(const T *t, long long p1
         long long q2 = binary_search(t[q1], t2, p2, r2);
         long long q3 = p3 + (q1 - p1) + (q2 - p2);
         a[q3] = t[q1];
-        _dac_merge(t, p1, q1 - 1, t2, p2, q2 - 1, a, p3, block_size, block_merger);
-        _dac_merge(t, q1 + 1, r1, t2, q2, r2, a, q3 + 1, block_size, block_merger);
+
+        invoker(
+        [&]{_dac_merge(t, p1, q1 - 1, t2, p2, q2 - 1, a, p3, block_size, block_merger, invoker);},
+        [&]{_dac_merge(t, q1 + 1, r1, t2, q2, r2, a, q3 + 1, block_size, block_merger, invoker);}
+        );
     }
 }
 
+
+/*
 template<typename T, typename BlockMerger, typename BlockPartition>
 void merger<T, BlockMerger, BlockPartition>::_parallel_dac_merge(const T *t, long long p1, long long r1,
                                 const T *t2, long long p2, long long r2,
@@ -64,7 +69,8 @@ void merger<T, BlockMerger, BlockPartition>::_parallel_dac_merge(const T *t, lon
                 [&]{_dac_merge(t, q1 + 1, r1, t2, q2, r2, a, q3 + 1, block_size, block_merger);}
         );
     }
-};
+}
+*/
 
 namespace internal {
 namespace kernel

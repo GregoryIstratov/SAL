@@ -13,28 +13,29 @@ namespace sal{ namespace sort {
 
 using namespace merge;
 
-template<typename T, size_t block_size = 8192, typename MergerSettings = default_merger_settings>
+template<typename T, typename Invoker = parallel_invoker, size_t block_size = 8192, typename MergerSettings = default_merger_settings>
 class sorter {
 public:
-    using merger_type = merger<T, typename MergerSettings::merger_type, typename MergerSettings::partitioner_type>;
+    using merger_type = merger<T, Invoker, typename MergerSettings::merger_type, typename MergerSettings::partitioner_type>;
 
-    template<typename Iterator>
-    static void parallel_merge_sort(Iterator first, Iterator last, Iterator out);
+
+
+//    template<typename Iterator>
+//    static void parallel_merge_sort(Iterator first, Iterator last, Iterator out);
 
     template<typename Iterator>
     static void merge_sort(Iterator first, Iterator last, Iterator out);
 
 
 private:
-    template<typename Invoker>
     static void _merge_sort_common(T* src, size_t l, size_t r, T* dest, bool src2dest = true, Invoker invoker = Invoker(), int height = 0);
 
 };
 
 
-template<typename T, size_t block_size, typename MergerSettings>
+template<typename T, typename Invoker, size_t block_size, typename MergerSettings>
 template<typename Iterator>
-void sorter<T, block_size, MergerSettings>::merge_sort(Iterator first, Iterator last, Iterator out)
+void sorter<T, Invoker, block_size, MergerSettings>::merge_sort(Iterator first, Iterator last, Iterator out)
 {
     static_assert(std::is_same<T, typename std::iterator_traits<Iterator>::value_type>::value,
                   "Specified type must be the same as type of iterators");
@@ -45,9 +46,10 @@ void sorter<T, block_size, MergerSettings>::merge_sort(Iterator first, Iterator 
     auto src = iterator2pointer(first);
     auto outp = iterator2pointer(out);
 
-    _merge_sort_common(src, 0, n-1, outp, true, serial_invoker());
+    _merge_sort_common(src, 0, n-1, outp);
 }
 
+/*
 template<typename T, size_t block_size, typename MergerSettings>
 template<typename Iterator>
 void sorter<T, block_size, MergerSettings>::parallel_merge_sort(Iterator first, Iterator last, Iterator out)
@@ -63,11 +65,10 @@ void sorter<T, block_size, MergerSettings>::parallel_merge_sort(Iterator first, 
 
     _merge_sort_common(src, 0, n-1, outp, true, parallel_invoker());
 }
+*/
 
-
-template<typename T, size_t block_size, typename MergerSettings>
-template<typename Invoker>
-void sorter<T, block_size, MergerSettings>::_merge_sort_common(T* src, size_t l, size_t r, T* dest, bool src2dest, Invoker invoker, int height)
+template<typename T, typename Invoker, size_t block_size, typename MergerSettings>
+void sorter<T, Invoker, block_size, MergerSettings>::_merge_sort_common(T* src, size_t l, size_t r, T* dest, bool src2dest, Invoker invoker, int height)
 {
 #ifdef SORT_DEBUG_VERBOSE
     print_seq("[Full Input] ", height, src, 0, 34);
@@ -105,7 +106,7 @@ void sorter<T, block_size, MergerSettings>::_merge_sort_common(T* src, size_t l,
         print_seq("[Merge Input A]", height, src , l, m);
         print_seq("[Merge Input B]", height, src , m+1, r);
 #endif
-        merger_type::parallel_merge(src, l, m, m+1, r, dest, l);
+        merger_type::merge(src, l, m, m+1, r, dest, l);
 
 #ifdef SORT_DEBUG_VERBOSE
         print_seq("[Merge Out]", height, dest, 0, 34);
@@ -117,7 +118,7 @@ void sorter<T, block_size, MergerSettings>::_merge_sort_common(T* src, size_t l,
         print_seq("[Merge Input A]", height, dest , l, m);
         print_seq("[Merge Input B]", height, dest , m+1, r);
 #endif
-        merger_type::parallel_merge(dest, l, m, m+1, r, src, l);
+        merger_type::merge(dest, l, m, m+1, r, src, l);
 
 #ifdef SORT_DEBUG_VERBOSE
         print_seq("[Merge Out]", height, src, 0, 34);

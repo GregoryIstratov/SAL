@@ -100,7 +100,7 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-            merger<int, default_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+//TODO            merger<int, default_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -124,7 +124,7 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-            merger<int, simd_int_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+//TODO            merger<int, simd_int_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -145,7 +145,7 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-            merger<int, simd_int_merger, simple_block_partition<64>>::parallel_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+//TODO            merger<int, simd_int_merger, simple_block_partition<64>>::parallel_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -165,7 +165,7 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-            merger<int, default_merger>::parallel_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+//TODO            merger<int, default_merger>::parallel_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -301,7 +301,7 @@ void test_index_merge()
 
     print_seq("[StartInput]", c.begin(), c.end());
 
-    sal::merge::merger<int, simd_int_merger, static_block_partition<4>>::merge(c.begin(), mid, c.end(), out.begin());
+//TODO    sal::merge::merger<int, simd_int_merger, static_block_partition<4>>::merge(c.begin(), mid, c.end(), out.begin());
 
     print_seq("[Resulting output]", out.begin(), out.end());
 }
@@ -324,7 +324,7 @@ void test_index_merge2()
     print_seq("[StartInput A]", a.begin(), a.end());
     print_seq("[StartInput B]", b.begin(), b.end());
 
-    sal::merge::merger<int, default_merger, static_block_partition<4>>::parallel_merge(a.begin(), a.end(), b.begin(), b.end(), out.begin());
+//TODO    sal::merge::merger<int, default_merger, static_block_partition<4>>::parallel_merge(a.begin(), a.end(), b.begin(), b.end(), out.begin());
 
     print_seq("[Resulting output]", out.begin(), out.end());
 }
@@ -347,7 +347,7 @@ void test_index_merge3()
     print_seq("[StartInput A]", a.begin(), a.end());
     print_seq("[StartInput B]", b.begin(), b.end());
 
-    sal::merge::merger<int, default_merger, static_block_partition<2>>::merge(a.data(),p1,r1,p2,r2,out.data(), 0);
+//TODO    sal::merge::merger<int, default_merger, static_block_partition<2>>::merge(a.data(),p1,r1,p2,r2,out.data(), 0);
 
     print_seq("[Resulting output]", out.begin(), out.end());
 }
@@ -369,15 +369,16 @@ int main() {
         a[i] = dis(gen);
 
 
-
+    std::cout<<"Starting a sorting..."<<std::endl;
     auto tm_start = std::chrono::high_resolution_clock::now();
 
-    sal::sort::sorter<int>::parallel_merge_sort(a.begin(), a.end(), res.begin());
+    sal::sort::sorter<int, parallel_invoker, 8192, merger_settings<simd_int_merger, static_block_partition<8192>>>
+    ::merge_sort(a.begin(), a.end(), res.begin());
 
     auto tm_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = tm_end - tm_start;
 
-    std::cout << "Parallel Merge Sort has finished for " << elapsed.count() << " sec." << std::endl;
+    std::cout << "Sorting has finished for " << elapsed.count() << " sec." << std::endl;
 
     std::cout<<"Checking array for consistency..."<<std::flush;
     if(check_sorted(res.begin(), res.end()))
