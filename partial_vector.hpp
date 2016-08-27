@@ -82,7 +82,32 @@ public:
         return &data_[begin_];
     }
 
+    template<typename InputIterator>
+    static void create_solid_2partial(InputIterator first1, InputIterator last1,
+                                    InputIterator first2, InputIterator last2,
+                                    aligned_vector<T>& buffer, partial_vector& a, partial_vector& b);
+
 };
 
+template<typename T>
+template<typename InputIterator>
+void partial_vector<T>::create_solid_2partial(InputIterator first1, InputIterator last1,
+                                           InputIterator first2, InputIterator last2,
+                                           aligned_vector<T>& buffer, partial_vector& a, partial_vector& b)
+{
+    size_t a_size = std::distance(first1, last1);
+    size_t b_size = std::distance(first2, last2);
+
+    buffer.clear();
+    buffer.shrink_to_fit();
+    buffer.reserve(a_size + b_size);
+
+    buffer.insert(buffer.end(), first1, last1);
+    buffer.insert(buffer.end(), first2, last2);
+
+    a = partial_vector(buffer, 0, a_size-1);
+    b = partial_vector(buffer, a_size, buffer.size()-1);
+
+}
 
 #endif //TEST_HEAP_SHARED_VECTOR_HPP

@@ -8,7 +8,49 @@
 #include <cmath>
 #include <algorithm>
 #include <type_traits>
+#include <tbb/tbb.h>
 #include "aligned_allocator.hpp"
+
+struct parallel_invoker
+{
+    template<typename ...Funs>
+    void operator()(Funs... funs)
+    {
+        tbb::parallel_invoke(funs...);
+    }
+};
+
+struct serial_invoker
+{
+    template<typename ...Funs>
+    void operator()(Funs... funs)
+    {
+        invoke(funs...);
+    }
+
+private:
+    template<typename Fun>
+    void invoke(Fun& fun)
+    {
+        fun();
+    }
+
+    template<typename Fun, typename ...Funs>
+    void invoke(Fun& fun, Funs... funs)
+    {
+        fun();
+        invoke(funs...);
+    }
+
+};
+
+template<typename RandomAccessIterator>
+typename std::iterator_traits<RandomAccessIterator>::value_type*
+iterator2pointer(RandomAccessIterator it)
+{
+    return &(*it);
+}
+
 
 template <typename T>
 struct is_random_access_iterator : std::is_same<
@@ -17,13 +59,55 @@ struct is_random_access_iterator : std::is_same<
 {};
 
 template<typename T, typename InputIterator>
-InputIterator binary_search(const T &value, InputIterator first, InputIterator last) {
-    first = std::lower_bound(first, last, value);
-    if (first != last) {
+InputIterator binary_search(const T &x, InputIterator first, InputIterator last) {
+
+    //if empty return first
+    if(first == last)
         return first;
+
+
+    if(x <= *first)
+        return first;
+
+    //if x > *first return q -> (first < q <= last) that *(q-1) < x
+
+    //the value pointed by the iterator returned by this function cannot be equivalent to x, only greater, *q  > x
+    auto q = std::upper_bound(first, last, x);
+    if (q != last) {
+        return q;
     }
 
     return last;
+}
+
+
+template<typename InputIterator>
+void print_seq(const char *label, InputIterator first, InputIterator last) {
+    std::cout << label << "|"<<std::distance(first, last)<<"|: ";
+    std::copy(first, last, std::ostream_iterator<typename std::iterator_traits<InputIterator>::value_type>(std::cout, " "));
+    std::cout << std::endl;
+}
+
+template<typename InputIterator>
+void print_seq(const char *label, int height, InputIterator first, InputIterator last) {
+    std::cout<<"|---";
+    for(int i = 0; i < height; ++i) {
+        std::cout << "|---";
+    }
+    std::cout << label << "|"<<std::distance(first, last)<<"|: ";
+    std::copy(first, last, std::ostream_iterator<typename std::iterator_traits<InputIterator>::value_type>(std::cout, " "));
+    std::cout << std::endl;
+}
+
+template<typename T>
+void print_seq(const char *label, int height, const T* a, size_t l, size_t r) {
+    std::cout<<"|---";
+    for(int i = 0; i < height; ++i) {
+        std::cout << "|---";
+    }
+    std::cout << label << "|"<<r-l<<"|: ";
+    if(r-l+1) for(int i = l; i <= r; ++i) std::cout<<a[i]<<" ";
+    std::cout << std::endl;
 }
 
 // This version is borrowed from "Introduction to Algorithms" 3rd edition, p. 799.
