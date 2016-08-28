@@ -171,6 +171,12 @@ inline void merge_avx2_8x8_32bit(__m256i &vA, __m256i &vB,
                                  __m256i &vMin, __m256i &vMax);
 
 inline void merge_256i(const int *a, const int *b, int *res);
+inline void merge_8x8_128i(const int *a, const int *b, int *res);
+
+inline void merge_8x8_debug(const int* a, const int* b, int* res)
+{
+    std::merge(a, a+8, b, b+8, res);
+}
 
 }
 
@@ -191,34 +197,50 @@ struct is_simd_enabled_comparator {
     static constexpr bool value = std::is_same<typename std::less<typename std::iterator_traits<Iterator>::value_type>, Comparator>::value;
 };
 
+//TODO works incorrectly
 inline int
 sequential_simd_merge(const int *first1, const int *last1, const int *first2, const int *last2, int *res) {
-    size_t a_size = last1 - first1;
-    size_t b_size = last2 - first2;
-    auto min_size = std::min(a_size, b_size);
-    auto max_size = std::max(a_size, b_size);
-    auto rem = min_size % 8;
+    size_t a_size = std::distance(first1, last1);
+    size_t b_size = std::distance(first2, last2);
 
-    int *pres = &res[0];
-    const int *pa = first1;
-    const int *pb = first2;
+    using utils::print_array;
 
+    std::cout<<std::endl;
+    print_array(first1, last1, "a");
+    print_array(first2, last2, "b");
 
-    size_t rem_size = min_size - rem;
-    if (rem_size >= 8) {
-        for (size_t i = 0; i < rem_size; i += 8) {
-            internal::kernel::merge_256i(pa, pb, pres);
-
-            pres += 16;
-
-            pa += 8;
-            pb += 8;
-        }
+    if(a_size > b_size)
+    {
+        std::swap(first1, first2);
+        std::swap(last1, last2);
     }
 
-    if (rem || max_size - min_size || rem_size < 8) {
-        std::merge(pa, last1, pb, last2, pres);
+    int* const bres = res;
+
+    //TODO found a bug. need to find a place in 'b' to put sequence in 'a'. probably recursion with binary search will help
+
+    while(std::distance(first1, last1) >= 8) {
+        //internal::kernel::merge_256i(pa, pb, pres);
+        //internal::kernel::merge_8x8_128i(pa, pb, pres);
+        internal::kernel::merge_8x8_debug(first1, first2, res);
+
+        res += 16;
+
+        first1 += 8;
+        first2 += 8;
+
+        print_array(first1, last1, "a");
+        print_array(first2, last2, "b");
+        print_array(bres, a_size+b_size, "res");
+
     }
+
+
+    if (first1 != last1 || first2 != last2) {
+        std::merge(first1, last1, first2, last2, res);
+    }
+
+    print_array(bres, a_size+b_size, "res");
 
     return 0;
 }

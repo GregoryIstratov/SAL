@@ -17,7 +17,7 @@ using namespace sal::merge;
 using sal::utils::print_seq;
 
 const size_t MEGABYTE = (1024 * 1024);
-const size_t TEST_SIZE = 1024 *2 * MEGABYTE / sizeof(int);
+const size_t TEST_SIZE = 35;//1024 *2 * MEGABYTE / sizeof(int);
 const int N = 20;
 
 class Test {
@@ -344,7 +344,8 @@ public:
     void operator()( const tbb::blocked_range<size_t>& r ) const {
         std::random_device rd;
         std::mt19937 gen_(rd());
-        std::uniform_int_distribution<> dis(INT32_MIN, INT32_MAX);
+        //std::uniform_int_distribution<> dis(INT32_MIN, INT32_MAX);
+        std::uniform_int_distribution<> dis(-100, 100);
         int *pi = my_i;
         for( size_t i=r.begin(); i!=r.end(); ++i )
             pi[i] = dis(gen_);
@@ -395,14 +396,15 @@ int main() {
     //simple way
     //sal::sort::sorter<int>::merge_sort(a.begin(), a.end(), res.begin());
 
-
-    sal::sort::sorter<int, parallel_invoker, 8192, merger_settings<default_merger, static_block_partition<8192>>>
+    sal::sort::sorter<int, serial_invoker, 8192, merger_settings<simd_int_merger, static_block_partition<8192>>>
     ::merge_sort(a.begin(), a.end(), res.begin());
+
 
     //std::sort(a.begin(), a.end());
 
     tm_end = std::chrono::high_resolution_clock::now();
     elapsed = tm_end - tm_start;
+
 
     std::cout << "ok ( " << elapsed.count() << " sec.)" << std::endl;
 

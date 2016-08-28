@@ -127,7 +127,7 @@ inline void _print_register(const __m256i &m, const char *label) {
     std::cout << label << ": { ";
 
     for (int i : v) {
-        std::cout << i << ", ";
+        std::cout << i << " ";
     }
 
     std::cout << " }" << std::endl;
@@ -139,7 +139,30 @@ inline void _print_register128(const __m128i &m, const char *label) {
     std::cout << label << ": { ";
 
     for (int i : v) {
-        std::cout << i << ", ";
+        std::cout << i << " ";
+    }
+
+    std::cout << " }" << std::endl;
+}
+
+template<typename T>
+inline void print_array(const T* m, size_t n, const char *label) {
+    std::cout << label << ": { ";
+
+    for (size_t i = 0; i < n; ++i) {
+        std::cout << m[i] << " ";
+    }
+
+    std::cout << " }" << std::endl;
+}
+
+template<typename Iterator>
+inline void print_array(Iterator first, Iterator last, const char *label) {
+    std::cout << label << ": { ";
+
+    while (first != last) {
+        std::cout << *first << " ";
+        ++first;
     }
 
     std::cout << " }" << std::endl;

@@ -83,7 +83,7 @@ inline void merge_avx2_8x8_32bit(__m256i &vA, __m256i &vB, // input
     //TODO doesnt work properly
     //pass 1
     vTmp = _mm256_min_epu32(vA, vB);
-    vMax = _mm256_max_epu32(vB, vB);
+    vMax = _mm256_max_epu32(vA, vB);
     vTmp = _mm256_alignr_epi8(vTmp, vTmp, 4);
 
     //pass 2
@@ -199,6 +199,68 @@ inline void reverse_merge_256i(const int *a, const int *b, int *res) {
     _mm256_store_si256((__m256i *) res, vmin);
     _mm256_store_si256((__m256i *) &res[8], vmax);
 }
+
+
+inline void merge_4x4_32bit(__m128i &vA, __m128i &vB, // input 1 & 2
+                            __m128i &vMin, __m128i &vMax) { // output
+    __m128i vTmp; // temporary register
+    vTmp = _mm_min_epu32(vA, vB);
+    vMax = _mm_max_epu32(vA, vB);
+    vTmp = _mm_alignr_epi8(vTmp, vTmp, 4);
+    vMin = _mm_min_epu32(vTmp, vMax);
+    vMax = _mm_max_epu32(vTmp, vMax);
+    vTmp = _mm_alignr_epi8(vMin, vMin, 4);
+    vMin = _mm_min_epu32(vTmp, vMax);
+    vMax = _mm_max_epu32(vTmp, vMax);
+    vTmp = _mm_alignr_epi8(vMin, vMin, 4);
+    vMin = _mm_min_epu32(vTmp, vMax);
+    vMax = _mm_max_epu32(vTmp, vMax);
+    vMin = _mm_alignr_epi8(vMin, vMin, 4);
+}
+inline void merge_8x8_32bit(__m128i &vA0, __m128i &vA1, // input 1
+        __m128i &vB0, __m128i &vB1, // input 2
+        __m128i &vMin0, __m128i &vMin1, // output
+        __m128i &vMax0, __m128i &vMax1) { // output
+// 1st step
+merge_4x4_32bit(vA1,vB1,vMin1,vMax1);
+merge_4x4_32bit(vA0,vB0,vMin0,vMax0);
+// 2nd step
+merge_4x4_32bit(vMax0,vMin1,vMin1,vMax0);
+}
+
+
+inline void merge_8x8_128i(const int *a, const int *b, int *res) {
+
+//    utils::print_array(a, 8, "a");
+//    utils::print_array(b, 8, "b");
+
+    __m128i a1 = _mm_loadu_si128((__m128i *) a);
+    __m128i a2 = _mm_loadu_si128((__m128i *) &a[4]);
+    __m128i b1 = _mm_loadu_si128((__m128i *) b);
+    __m128i b2 = _mm_loadu_si128((__m128i *) &b[4]);
+    __m128i vmin1, vmin2, vmax1, vmax2;
+
+//    utils::_print_register128(a1, "a1");
+//    utils::_print_register128(a2, "a2");
+//    utils::_print_register128(b1, "b1");
+//    utils::_print_register128(b2, "b2");
+    merge_8x8_32bit(a1, a2, b1, b2, vmin1, vmin2, vmax1, vmax2);
+
+//    utils::_print_register128(vmin1, "vmin1");
+//    utils::_print_register128(vmin2, "vmin2");
+//    utils::_print_register128(vmax1, "vmax1");
+//    utils::_print_register128(vmax2, "vmax2");
+
+    _mm_storeu_si128((__m128i *) res, vmin1);
+    _mm_storeu_si128((__m128i *) &res[4], vmin2);
+    _mm_storeu_si128((__m128i *) &res[8], vmax1);
+    _mm_storeu_si128((__m128i *) &res[12], vmax2);
+
+    //utils::print_array(res, 16, "res");
+}
+
+
+
 }
 
 }}}

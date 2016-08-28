@@ -114,8 +114,8 @@ public:
         // be thrown in the case of integer overflow.
         if (n > max_size())
         {
-            //throw std::length_error("aligned_allocator<T>::allocate() - Integer overflow.");
-            std::abort();
+            throw std::length_error("aligned_allocator<T>::allocate() - Integer overflow.");
+            //std::abort();
         }
 
         // Mallocator wraps malloc().
@@ -124,8 +124,8 @@ public:
         // Allocators should throw std::bad_alloc in the case of memory allocation failure.
         if (pv == NULL)
         {
-            //throw std::bad_alloc();
-            std::abort();
+            throw std::bad_alloc();
+            //std::abort();
         }
 
         return static_cast<T *>(pv);
