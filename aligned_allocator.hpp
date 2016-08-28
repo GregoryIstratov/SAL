@@ -79,7 +79,7 @@ public:
     // Returns true if and only if storage allocated from *this
     // can be deallocated from other, and vice versa.
     // Always returns true for stateless allocators.
-    bool operator==(const aligned_allocator& other) const
+    bool operator==(const aligned_allocator&) const
     {
         return true;
     }
@@ -131,7 +131,7 @@ public:
         return static_cast<T *>(pv);
     }
 
-    void deallocate(T * const p, const std::size_t n) const
+    void deallocate(T * const p, const std::size_t) const
     {
         _mm_free(p);
     }

@@ -43,10 +43,6 @@ public:
     using merger_type = merger<T, Invoker, typename MergerSettings::merger_type, typename MergerSettings::partitioner_type>;
 
 
-
-//    template<typename Iterator>
-//    static void parallel_merge_sort(Iterator first, Iterator last, Iterator out);
-
     template<typename Iterator, typename Comparator = std::less<int>>
     static void merge_sort(Iterator first, Iterator last, Iterator out, Comparator cmp = Comparator());
 
@@ -71,8 +67,8 @@ void sorter<T, Invoker, block_size, MergerSettings>::merge_sort(Iterator first, 
                   "Iterators must be of random-access iterator type");
 
     long long n = std::distance(first, last);
-    auto src = iterator2pointer(first);
-    auto outp = iterator2pointer(out);
+    auto src = utils::iterator2pointer(first);
+    auto outp = utils::iterator2pointer(out);
 
     _merge_sort_common(src, 0, n-1, outp, true, cmp, internal::unstable_block_sorter());
 }
@@ -87,8 +83,8 @@ void sorter<T, Invoker, block_size, MergerSettings>::stable_merge_sort(Iterator 
                   "Iterators must be of random-access iterator type");
 
     long long n = std::distance(first, last);
-    auto src = iterator2pointer(first);
-    auto outp = iterator2pointer(out);
+    auto src = utils::iterator2pointer(first);
+    auto outp = utils::iterator2pointer(out);
 
     _merge_sort_common(src, 0, n-1, outp, true, cmp, internal::stable_block_sorter());
 }

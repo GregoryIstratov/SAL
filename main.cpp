@@ -14,8 +14,10 @@
 
 using namespace sal::merge;
 
+using sal::utils::print_seq;
+
 const size_t MEGABYTE = (1024 * 1024);
-const size_t TEST_SIZE = 1024 * MEGABYTE / sizeof(int);
+const size_t TEST_SIZE = 1024 *2 * MEGABYTE / sizeof(int);
 const int N = 20;
 
 class Test {
@@ -38,7 +40,7 @@ public:
     void make_merge_data(aligned_vector<int> &a, aligned_vector<int> &b, size_t size) {
         a.resize(size);
         b.resize(size);
-        for (int i = 0, j = 1, k = 2; i < size; ++i, j += 2, k += 2) {
+        for (size_t i = 0, j = 1, k = 2; i < size; ++i, j += 2, k += 2) {
             a[i] = j;
             b[i] = k;
         }
@@ -100,7 +102,7 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-//TODO            merger<int, default_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+            merger<int, serial_invoker, default_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -124,7 +126,7 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-//TODO            merger<int, simd_int_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+            merger<int, serial_invoker, simd_int_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -145,7 +147,8 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-//TODO            merger<int, simd_int_merger, simple_block_partition<64>>::parallel_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+            merger<int, parallel_invoker, simd_int_merger, simple_block_partition<64>>
+            ::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -165,7 +168,7 @@ public:
         for (int i = 0; i < N; ++i) {
             auto tm_start = std::chrono::high_resolution_clock::now();
 
-//TODO            merger<int, default_merger>::parallel_merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
+            merger<int, parallel_invoker, default_merger>::merge(a_.begin(), a_.end(), b_.begin(), b_.end(), res_);
 
             auto tm_end = std::chrono::high_resolution_clock::now();
             std::chrono::duration<double> elapsed = tm_end - tm_start;
@@ -180,7 +183,7 @@ public:
 
     void test_result()
     {
-        for(int j =0;j<buffer_.size();++j)
+        for(long long j =0;j<(long long)buffer_.size();++j)
         {
             if(res_[j] != j+1)
             {
@@ -224,7 +227,8 @@ void test_merger()
     partial_vector<int> pa, pb;
     partial_vector<int>::create_solid_2partial(a.begin(),a.end(),b.begin(),b.end(), buffer, pa, pb);
 
-    //sal::merge::merger<int, default_merger, static_block_partition<2>>::merge(pa.begin(), pa.end(),pb.begin(),pb.end(),c.begin(), c.end());
+    sal::merge::merger<int, serial_invoker, default_merger, static_block_partition<2>>
+    ::merge(pa.begin(), pa.end(),pb.begin(),pb.end(),c.begin());
 
 
 }
@@ -238,37 +242,6 @@ void test_binary_search()
     a.insert(q, 6);
 
 }
-
-
-template<typename T, typename OutDebug>
-void _my_merge(const T* t, long long p1, long long r1, long long p2, long long r2, T* a, long long p3, OutDebug out_dbg, int height = 0)
-{
-    out_dbg(height);
-    print_seq("[Merger A]", height, t, p1, r1);
-    print_seq("[Merger B]", height, t, p2, r2);
-    long long n1 = r1 - p1 + 1;
-    long long n2 = r2 - p2 + 1;
-    if (n1 < n2) {
-        std::swap(p1, p2);
-        std::swap(r1, r2);
-        std::swap(n1, n2);
-    }
-    if (n1 == 0) return;
-
-    long long q1 = (p1 + r1) / 2;
-    long long q2 = binary_search(t[q1],t, p2, r2);
-    long long q1_len = q1 - p1;
-    long long q2_len = q2 - p2;
-    print_seq("[Merger p1-q1]", height, t, p1, q1);
-    print_seq("[Merger p2-q2]", height, t, p2, q2);
-    print_seq("[Merger q1-r1]", height, t, q1, r1);
-    print_seq("[Merger q2-r2]", height, t, q2, r2);
-    long long q3 = p3 + (q1 - p1) + (q2 - p2);
-    a[q3] = t[q1];
-    _my_merge(t, p1, q1-1, p2, q2-1, a, p3,  out_dbg, height+1);
-    _my_merge(t, q1+1, r1, q2, r2, a, q3+1,  out_dbg, height+1);
-}
-
 
 struct MyOutDebugger
 {
@@ -301,7 +274,8 @@ void test_index_merge()
 
     print_seq("[StartInput]", c.begin(), c.end());
 
-//TODO    sal::merge::merger<int, simd_int_merger, static_block_partition<4>>::merge(c.begin(), mid, c.end(), out.begin());
+   sal::merge::merger<int, serial_invoker, simd_int_merger, static_block_partition<4>>
+   ::merge(c.begin(), mid, c.end(), out.begin());
 
     print_seq("[Resulting output]", out.begin(), out.end());
 }
@@ -315,16 +289,12 @@ void test_index_merge2()
     std::sort(a.begin(),a.end());
     std::sort(b.begin(), b.end());
 
-    long long p1 = 0;
-    long long r1 = a.size()-1;
-    long long p2 = 0;
-    long long r2 = b.size()-1;
-
 
     print_seq("[StartInput A]", a.begin(), a.end());
     print_seq("[StartInput B]", b.begin(), b.end());
 
-//TODO    sal::merge::merger<int, default_merger, static_block_partition<4>>::parallel_merge(a.begin(), a.end(), b.begin(), b.end(), out.begin());
+    sal::merge::merger<int, parallel_invoker, default_merger, static_block_partition<4>>
+    ::merge(a.begin(), a.end(), b.begin(), b.end(), out.begin());
 
     print_seq("[Resulting output]", out.begin(), out.end());
 }
@@ -347,7 +317,8 @@ void test_index_merge3()
     print_seq("[StartInput A]", a.begin(), a.end());
     print_seq("[StartInput B]", b.begin(), b.end());
 
-//TODO    sal::merge::merger<int, default_merger, static_block_partition<2>>::merge(a.data(),p1,r1,p2,r2,out.data(), 0);
+    sal::merge::merger<int, serial_invoker, default_merger, static_block_partition<2>>
+    ::merge(a.data(),p1,r1,p2,r2,out.data(), 0);
 
     print_seq("[Resulting output]", out.begin(), out.end());
 }
@@ -365,45 +336,84 @@ void test_reverse_kernel()
 }
 
 
+class ApplyIntRandom
+{
+    int * const my_i;
+public:
+
+    void operator()( const tbb::blocked_range<size_t>& r ) const {
+        std::random_device rd;
+        std::mt19937 gen_(rd());
+        std::uniform_int_distribution<> dis(INT32_MIN, INT32_MAX);
+        int *pi = my_i;
+        for( size_t i=r.begin(); i!=r.end(); ++i )
+            pi[i] = dis(gen_);
+    }
+
+    ApplyIntRandom(int* data)
+            : my_i(data)
+    {
+
+    }
+};
+
+void parallel_randomize(int* a, size_t n ) {
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,n), ApplyIntRandom(a));
+}
+
 int main() {
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(INT32_MIN, INT32_MAX);
-    //std::uniform_int_distribution<> dis(-100, 100);
+    std::cout<<"Initializing memory..."<<std::flush;
 
-    //aligned_vector<int> a = { 9,4,5,1,3,7,0,2,8,6 };
+    auto tm_start = std::chrono::high_resolution_clock::now();
     aligned_vector<int> a;
     a.resize(TEST_SIZE);
     aligned_vector<int> res;
     res.resize(TEST_SIZE);
 
-    for(size_t i = 0; i < TEST_SIZE; ++i)
-        a[i] = dis(gen);
+    auto tm_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = tm_end - tm_start;
+
+    std::cout<<"ok ("<<elapsed.count()<<" sec.)"<<std::endl;
 
 
-    std::cout<<"Starting a sorting..."<<std::endl;
-    auto tm_start = std::chrono::high_resolution_clock::now();
+
+    std::cout<<"Making testing data..."<<std::flush;
+    tm_start = std::chrono::high_resolution_clock::now();
+
+    parallel_randomize(a.data(), a.size());
+
+    tm_end = std::chrono::high_resolution_clock::now();
+    elapsed = tm_end - tm_start;
+
+    std::cout<<"ok ("<<elapsed.count()<<" sec.)"<<std::endl;
+
+    std::cout<<"Starting sorting the data..."<<std::flush;
+
+    tm_start = std::chrono::high_resolution_clock::now();
 
     //simple way
     //sal::sort::sorter<int>::merge_sort(a.begin(), a.end(), res.begin());
 
-    sal::sort::sorter<int, parallel_invoker, 8192, merger_settings<simd_int_merger, static_block_partition<8192>>>
+
+    sal::sort::sorter<int, parallel_invoker, 8192, merger_settings<default_merger, static_block_partition<8192>>>
     ::merge_sort(a.begin(), a.end(), res.begin());
 
-    auto tm_end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> elapsed = tm_end - tm_start;
+    //std::sort(a.begin(), a.end());
 
-    std::cout << "Sorting has finished for " << elapsed.count() << " sec." << std::endl;
+    tm_end = std::chrono::high_resolution_clock::now();
+    elapsed = tm_end - tm_start;
+
+    std::cout << "ok ( " << elapsed.count() << " sec.)" << std::endl;
 
     std::cout<<"Checking array for consistency..."<<std::flush;
-    if(check_sorted(res.begin(), res.end()))
+    if(std::is_sorted(res.begin(), res.end()))
     {
-        std::cout<<"Array sorted correctly"<<std::endl;
+        std::cout<<"ok"<<std::endl;
     }
     else
     {
-        std::cout<<"Array sorted incorrectly"<<std::endl;
+        std::cout<<"fail"<<std::endl;
     }
 
     return 0;

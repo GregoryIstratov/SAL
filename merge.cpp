@@ -22,7 +22,7 @@ void merger<T, Invoker, BlockMerger, BlockPartition>::_dac_merge(const T *t, lon
     }
     if (n1 == 0) return;
 
-    if (n1 + n2 <= block_size) {
+    if ((size_t)(n1 + n2) <= block_size) {
         block_merger(&t[p1], &t[p1 + n1], &t2[p2], &t2[p2 + n2], &a[p3], cmp);
     }
     else {
@@ -80,7 +80,7 @@ inline void merge_avx2_8x8_32bit(__m256i &vA, __m256i &vB, // input
                                  __m256i &vMin, __m256i &vMax) { // output
     __m256i vTmp;
 
-    //TODO
+    //TODO doesnt work properly
     //pass 1
     vTmp = _mm256_min_epu32(vA, vB);
     vMax = _mm256_max_epu32(vB, vB);
@@ -128,12 +128,14 @@ inline void reverse_merge_avx2_8x8_32bit(__m256i &vA, __m256i &vB, // input
                                  __m256i &vMin, __m256i &vMax) { // output
     __m256i vTmp;
 
+    using utils::_print_register;
+
     _print_register(vA, "vA");
     _print_register(vB, "vB");
 
     //pass 1
     vTmp = _mm256_max_epu32(vA, vB);
-    vMax = _mm256_min_epu32(vA, vB);
+    vMax = _mm256_min_epu32(vB, vB);
 
     _print_register(vTmp, "vMin");
     _print_register(vMax, "vMax");

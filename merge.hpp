@@ -14,6 +14,11 @@
 namespace sal {
 namespace merge {
 
+using utils::parallel_invoker;
+using utils::serial_invoker;
+using utils::binary_search;
+using utils::is_random_access_iterator;
+
 struct auto_block_partition
 {
     size_t operator()(size_t arr_size)
@@ -35,7 +40,7 @@ struct simple_block_partition
 template<size_t BlockSize>
 struct static_block_partition
 {
-    size_t operator()(size_t arr_size)
+    size_t operator()(size_t /*arr_size*/)
     {
         return BlockSize;
     }
@@ -127,9 +132,9 @@ void merger<T, Invoker, BlockMerger, BlockPartition>::merge(InputIterator first,
     size_t block_size = BlockPartition()(a_size+b_size);
 
     long long p1 = 0, r1 = a_size-1 , p2 = 0, r2 = b_size-1 , p3 = 0;
-    auto t = iterator2pointer(first);
-    auto t2 = iterator2pointer(mid);
-    auto outp = iterator2pointer(out);
+    auto t = utils::iterator2pointer(first);
+    auto t2 = utils::iterator2pointer(mid);
+    auto outp = utils::iterator2pointer(out);
 
     _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, cmp, block_size, BlockMerger());
 };
@@ -150,9 +155,9 @@ void merger<T, Invoker, BlockMerger, BlockPartition>::merge(InputIterator first1
     size_t block_size = BlockPartition()(a_size+b_size);
 
     long long p1 = 0, r1 = a_size-1 , p2 = 0, r2 = b_size-1 , p3 = 0;
-    auto t = iterator2pointer(first1);
-    auto t2 = iterator2pointer(first2);
-    auto outp = iterator2pointer(out);
+    auto t = utils::iterator2pointer(first1);
+    auto t2 = utils::iterator2pointer(first2);
+    auto outp = utils::iterator2pointer(out);
 
     _dac_merge(t, p1, r1, t2, p2, r2, outp, p3, cmp, block_size, BlockMerger());
 }
@@ -223,7 +228,7 @@ sequential_simd_merge(const int *first1, const int *last1, const int *first2, co
 struct simd_int_merger {
     template<typename InputIterator, typename OutputIterator, typename Comparator>
     void operator()(InputIterator first1, InputIterator last1, InputIterator first2, InputIterator last2,
-                    OutputIterator out, Comparator cmp) {
+                    OutputIterator out, Comparator) {
         static_assert(internal::is_simd_enabled_comparator<InputIterator, Comparator>::value,
                       "simd_int_merger doesn't support custom comparators");
 
