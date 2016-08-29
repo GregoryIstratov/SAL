@@ -167,11 +167,15 @@ namespace internal {
 
 namespace kernel {
 
+#ifdef _USE_AVX2_
 inline void merge_avx2_8x8_32bit(__m256i &vA, __m256i &vB,
                                  __m256i &vMin, __m256i &vMax);
 
 inline void merge_256i(const int *a, const int *b, int *res);
+#endif
+#ifdef _USE_SSE4_
 inline void merge_8x8_128i(const int *a, const int *b, int *res);
+#endif
 
 inline void merge_8x8_debug(const int* a, const int* b, int* res)
 {

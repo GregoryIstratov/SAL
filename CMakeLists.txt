@@ -28,6 +28,9 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra -Wpedantic")
 
+add_definitions(-D_USE_AVX2_)
+add_definitions(-D_USE_SSE4_)
+
 set(SOURCE_FILES main.cpp aligned_allocator.hpp partial_vector.hpp merge.cpp merge.hpp utility.cpp utility.hpp sort.hpp)
 add_executable(sal ${SOURCE_FILES})
 target_link_libraries(sal tbb)

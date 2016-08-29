@@ -76,6 +76,8 @@ void merger<T, BlockMerger, BlockPartition>::_parallel_dac_merge(const T *t, lon
 namespace internal {
 namespace kernel
 {
+
+#ifdef _USE_AVX2_
 inline void merge_avx2_8x8_32bit(__m256i &vA, __m256i &vB, // input
                                  __m256i &vMin, __m256i &vMax) { // output
     __m256i vTmp;
@@ -200,6 +202,9 @@ inline void reverse_merge_256i(const int *a, const int *b, int *res) {
     _mm256_store_si256((__m256i *) &res[8], vmax);
 }
 
+#endif
+
+#ifdef _USE_SSE4_
 
 inline void merge_4x4_32bit(__m128i &vA, __m128i &vB, // input 1 & 2
                             __m128i &vMin, __m128i &vMax) { // output
@@ -259,6 +264,7 @@ inline void merge_8x8_128i(const int *a, const int *b, int *res) {
     //utils::print_array(res, 16, "res");
 }
 
+#endif
 
 
 }
