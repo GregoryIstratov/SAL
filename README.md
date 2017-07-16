@@ -1,5 +1,5 @@
 # SAL
-Superior Algorithm Library
+Scalable Algorithm Library
 
 **Dependencies:** [Intel® TBB](https://www.threadingbuildingblocks.org/)
 

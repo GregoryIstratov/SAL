@@ -1,10 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(sal)
 
-message("SAL - Superior Algorithm Library")
-
-include_directories(/usr/local/include)
-link_directories(/usr/local/lib)
+message("SAL - Scalable Algorithm Library")
 
 
 
